@@ -1,0 +1,110 @@
+---
+title: "Kaggle Titanic Competition"
+author: "Mauro Vicic"
+date: "3/12/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=FALSE, include=FALSE}
+library(tidyverse)
+library(mice)
+library(DMwR)
+library(randomForest)
+```
+
+
+First I loaded the data into two separate dataframes, usually I would merge them into one but when I was starting this project I was exploring the train dataset first so i just repeted the same steps to set up the test dataset.
+
+```{r, include=FALSE}
+titTrain = read_csv("KaggleComp/train.csv")
+titTest = read_csv("KaggleComp/test.csv")
+```
+
+In order to fill in some unknown numeric values such as age and fare I used the knnImputation method.
+
+```{r}
+numsTrain <- sapply(titTrain, is.numeric)
+numsTrain[2] = FALSE
+newTitTrain = data.frame(titTrain[ ,numsTrain])
+knnOutputTrain <- knnImputation(newTitTrain)
+
+numsTest <- sapply(titTest, is.numeric)
+newTitTest = data.frame(titTest[ ,numsTest])
+knnOutputTest <- knnImputation(newTitTest)
+```
+
+
+After the knnImputation method was done I made sure that dataframes are clean and that there is no missing values in the character columns of interested. I did not use Name, Cabin and Ticket columns for this model.
+
+```{r}
+charTrain = sapply(titTrain,is.character)
+charTrain[1] = TRUE
+charTitTrain = data.frame(titTrain[ ,charTrain])
+
+charTest = sapply(titTest,is.character)
+charTest[1] = TRUE
+charTitTest = data.frame(titTest[ ,charTest])
+
+```
+
+
+```{r}
+fullTitanic = merge(knnOutputTrain, charTitTrain, by = "PassengerId")
+
+fullTitanicTest = merge(knnOutputTest, charTitTest, by = "PassengerId")
+```
+
+```{r}
+train = cbind(fullTitanic, titTrain[,2])
+train[sapply(train, is.character)] <- lapply(train[sapply(train, is.character)], 
+                                       as.factor)
+
+fullTitanicTest[sapply(fullTitanicTest, is.character)] <- lapply(fullTitanicTest[sapply(fullTitanicTest, is.character)], 
+                                       as.factor)
+```
+
+```{r}
+summary(train$Embarked)
+missing = which(is.na(train$Embarked))
+train$Embarked[missing] = "S"
+summary(train$Embarked)
+```
+
+```{r}
+summary(fullTitanicTest$Embarked)
+```
+
+
+After the cleaning is done I made a random forest method which had a classification percentage of close to 79% which was good for top 31%.
+
+
+```{r}
+set.seed(7)
+model <- randomForest(as.factor(Survived) ~ Pclass + Sex + Age + SibSp + Parch + Fare +
+                                            Embarked,
+                      data=train, 
+                      importance=TRUE, 
+                      ntree=500)
+```
+
+```{r}
+varImpPlot(model)
+```
+
+```{r}
+result = predict(model, fullTitanicTest)
+```
+
+```{r}
+submit <- data.frame(PassengerId = fullTitanicTest$PassengerId, Survived = result)
+
+write.csv(submit, file = "titanicSubmit.csv", row.names = FALSE)
+```
+
+
+
+
