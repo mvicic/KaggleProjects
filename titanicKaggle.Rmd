@@ -27,14 +27,14 @@ titTest = read_csv("KaggleComp/test.csv")
 In order to fill in some unknown numeric values such as age and fare I used the knnImputation method.
 
 ```{r}
-numsTrain <- sapply(titTrain, is.numeric)
+numsTrain = sapply(titTrain, is.numeric)
 numsTrain[2] = FALSE
 newTitTrain = data.frame(titTrain[ ,numsTrain])
 knnOutputTrain <- knnImputation(newTitTrain)
 
-numsTest <- sapply(titTest, is.numeric)
+numsTest = sapply(titTest, is.numeric)
 newTitTest = data.frame(titTest[ ,numsTest])
-knnOutputTest <- knnImputation(newTitTest)
+knnOutputTest = knnImputation(newTitTest)
 ```
 
 
@@ -84,7 +84,7 @@ After the cleaning is done I made a random forest method which had a classificat
 
 ```{r}
 set.seed(7)
-model <- randomForest(as.factor(Survived) ~ Pclass + Sex + Age + SibSp + Parch + Fare +
+model = randomForest(as.factor(Survived) ~ Pclass + Sex + Age + SibSp + Parch + Fare +
                                             Embarked,
                       data=train, 
                       importance=TRUE, 
@@ -100,7 +100,7 @@ result = predict(model, fullTitanicTest)
 ```
 
 ```{r}
-submit <- data.frame(PassengerId = fullTitanicTest$PassengerId, Survived = result)
+submit = data.frame(PassengerId = fullTitanicTest$PassengerId, Survived = result)
 
 write.csv(submit, file = "titanicSubmit.csv", row.names = FALSE)
 ```
